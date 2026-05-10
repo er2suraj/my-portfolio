@@ -438,11 +438,27 @@ function showSection(id) {
 }
 
 /* ===================== LOAD ===================== */
-function getData() {
-  try { return JSON.parse(localStorage.getItem('portfolio_data')) || DEFAULTS; } catch { return DEFAULTS; }
+async function getData() {
+  try {
+
+    const snap = await window.firebaseGetDoc(
+      window.firebaseDoc(window.firebaseDB, 'portfolio', 'main')
+    );
+
+    if (snap.exists()) {
+      return snap.data();
+    }
+
+    return DEFAULTS;
+
+  } catch (err) {
+    console.error(err);
+    return DEFAULTS;
+  }
 }
-function loadAll() {
-  const d = getData();
+
+async function loadAll() {
+  const d = await getData();
   // Identity
   document.getElementById('i-name').value = d.name || '';
   document.getElementById('i-initials').value = d.initials || '';
@@ -477,7 +493,7 @@ function loadAll() {
 }
 
 /* ===================== SAVE ===================== */
-function saveAll() {
+async function saveAll() {
   const d = {
     name: document.getElementById('i-name').value,
     initials: document.getElementById('i-initials').value,
@@ -509,7 +525,10 @@ function saveAll() {
     },
     socials: collectSocials(),
   };
-  localStorage.setItem('portfolio_data', JSON.stringify(d));
+  await window.firebaseSetDoc(
+    window.firebaseDoc(window.firebaseDB, 'portfolio', 'main'),
+    d
+  );
   const st = document.getElementById('save-status');
   st.textContent = '✅ Saved!'; st.className = 'save-status saved';
   setTimeout(() => { st.textContent = 'Unsaved changes'; st.className = 'save-status'; }, 2500);
@@ -661,5 +680,37 @@ document.addEventListener('input', () => {
   document.getElementById('save-status').className = 'save-status';
 });
 </script>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDBgESgeIeWUO3N5jc8xU9gvIzQTyF6IV8",
+  authDomain: "surajchauhan-portfolio.firebaseapp.com",
+  projectId: "surajchauhan-portfolio",
+  storageBucket: "surajchauhan-portfolio.firebasestorage.app",
+  messagingSenderId: "459179363014",
+  appId: "1:459179363014:web:8d1ab55571c56830d6a5c7",
+  measurementId: "G-QFLY4HLQRD"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.firebaseDB = db;
+window.firebaseDoc = doc;
+window.firebaseSetDoc = setDoc;
+window.firebaseGetDoc = getDoc;
+
+</script>
+
 </body>
 </html>
